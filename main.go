@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -35,11 +36,13 @@ type Controller struct {
 }
 
 const (
-	deafultHostsFile = "hosts.txt"
+	deafultHostsFile   = "hosts.txt"
+	defaultUpdateDelay = 10
 )
 
 var (
-	hostsFile = flag.String("hostsFilePath", deafultHostsFile, "Hosts file path.")
+	hostsFile   = flag.String("hostsFilePath", deafultHostsFile, "Hosts file path.")
+	updateDelay = flag.Int("updateDelay", defaultUpdateDelay, "Delay from detection of kubelet start to hosts update.")
 )
 
 var serverStartTime = time.Now()
@@ -217,8 +220,11 @@ func (c *Controller) processNextItem() bool {
 	if exists {
 		if ev, ok := obj.(*core_v1.Event); ok {
 			if ev.ObjectMeta.CreationTimestamp.Sub(serverStartTime).Seconds() > 0 {
-				glog.Info("detect kubelet start, update hosts file")
-				updateHostsFile()
+				glog.Infof("detect kubelet start, update hosts file after %s seconds.", strconv.Itoa(*updateDelay))
+				go func() {
+					time.Sleep(time.Duration(*updateDelay) * time.Second)
+					updateHostsFile()
+				}()
 			}
 		}
 	}
