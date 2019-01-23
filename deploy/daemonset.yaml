@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hosts-adder
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: hosts-adder
+  template:
+    metadata:
+      labels:
+        app: hosts-adder
+    spec:
+      tolerations:
+        - operator: "Exists"
+          effect: "NoExecute"
+        - operator: "Exists"
+          effect: "NoSchedule"
+      serviceAccountName: hosts-adder
+      containers:
+        - name: hosts-adder
+          image: masahata/node-hosts-adder
+          args: ["-logtostderr","-hostsFilePath=/mnt/etc/hosts"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: hosts
+              mountPath: /mnt/etc/hosts
+      volumes:
+        - name: hosts
+          hostPath:
+            path: /etc/hosts
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: hosts-adder
+rules:
+- apiGroups: [""]
+  resources: ["events","nodes"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hosts-adder
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: hosts-adder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hosts-adder
+subjects:
+  - kind: ServiceAccount
+    name: hosts-adder
+    namespace: kube-system
