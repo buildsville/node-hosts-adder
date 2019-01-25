@@ -75,9 +75,12 @@ var kubeClient = func() kubernetes.Interface {
 
 func updateHostsFile() error {
 	lines, _ := fileLines()
-	hosts := getHosts()
+	hosts, err := getHosts()
+	if err != nil {
+		return err
+	}
 	filtered := filterLine(lines, hosts)
-	err := writeNewHosts(filtered, hosts)
+	err = writeNewHosts(filtered, hosts)
 	return err
 }
 
@@ -86,11 +89,12 @@ func getNodeList() ([]core_v1.Node, error) {
 	return out.Items, err
 }
 
-func getHosts() []host {
+func getHosts() ([]host, error) {
 	var ret []host
 	ns, e := getNodeList()
 	if e != nil {
-		glog.Errorln(e)
+		return nil, e
+		//glog.Errorln(e)
 	}
 	for _, n := range ns {
 		var h, i string
@@ -104,7 +108,7 @@ func getHosts() []host {
 		}
 		ret = append(ret, host{h, i})
 	}
-	return ret
+	return ret, nil
 }
 
 func fileLines() ([]string, error) {
@@ -223,7 +227,9 @@ func (c *Controller) processNextItem() bool {
 				glog.Infof("detect kubelet start, update hosts file after %s seconds.", strconv.Itoa(*updateDelay))
 				go func() {
 					time.Sleep(time.Duration(*updateDelay) * time.Second)
-					updateHostsFile()
+					if e := updateHostsFile(); e != nil {
+						glog.Errorln(e)
+					}
 				}()
 			}
 		}
@@ -243,7 +249,7 @@ func main() {
 	flag.Parse()
 	err := updateHostsFile()
 	if err != nil {
-		glog.Errorln(err)
+		panic(err)
 	}
 	watchStart()
 }
