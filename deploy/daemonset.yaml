@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: hosts-adder
+  name: hosts-converter
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: hosts-adder
+      app: hosts-converter
   template:
     metadata:
       labels:
-        app: hosts-adder
+        app: hosts-converter
     spec:
       tolerations:
         - operator: "Exists"
           effect: "NoExecute"
         - operator: "Exists"
           effect: "NoSchedule"
-      serviceAccountName: hosts-adder
+      serviceAccountName: hosts-converter
       containers:
-        - name: hosts-adder
-          image: masahata/node-hosts-adder
+        - name: hosts-converter
+          image: masahata/node-hosts-converter
           args: ["-logtostderr","-hostsFilePath=/mnt/etc/hosts"]
           securityContext:
             privileged: true
@@ -35,7 +35,7 @@ spec:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: hosts-adder
+  name: hosts-converter
 rules:
 - apiGroups: [""]
   resources: ["events","nodes"]
@@ -44,18 +44,18 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: hosts-adder
+  name: hosts-converter
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: hosts-adder
+  name: hosts-converter
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: hosts-adder
+  name: hosts-converter
 subjects:
   - kind: ServiceAccount
-    name: hosts-adder
+    name: hosts-converter
     namespace: kube-system

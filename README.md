@@ -1,4 +1,4 @@
-node-hosts-adder
+node-hosts-converter
 =====
 
 Toy tool for https://github.com/buildsville/kubernetes-the-hobby-way  
@@ -11,8 +11,8 @@ When deploying, it adds infos of all nodes, and after that watch addition of nod
 #### usage
 
 ```
-./node-hosts-adder -h
+./node-hosts-converter -h
 ```
 
 #### docker image  
-https://hub.docker.com/r/masahata/node-hosts-adder/
+https://hub.docker.com/r/masahata/node-hosts-converter/
