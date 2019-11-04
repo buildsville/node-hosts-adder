@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mitchellh/go-homedir"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/mitchellh/go-homedir"
 
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -155,8 +155,8 @@ func writeNewHosts(strs []string, hosts []host) error {
 func kubeletStartSelect() fields.Selector {
 	var selectors []fields.Selector
 	selectors = append(selectors, fields.OneTermEqualSelector("involvedObject.kind", "Node"))
-	selectors = append(selectors, fields.OneTermEqualSelector("source", "kubelet"))
-	selectors = append(selectors, fields.OneTermEqualSelector("reason", "Starting"))
+	selectors = append(selectors, fields.OneTermEqualSelector("source", "node-controller"))
+	selectors = append(selectors, fields.OneTermEqualSelector("reason", "RegisteredNode"))
 	return fields.AndSelectors(selectors...)
 }
 
@@ -224,7 +224,7 @@ func (c *Controller) processNextItem() bool {
 	if exists {
 		if ev, ok := obj.(*core_v1.Event); ok {
 			if ev.ObjectMeta.CreationTimestamp.Sub(serverStartTime).Seconds() > 0 {
-				glog.Infof("detect kubelet start, update hosts file after %s seconds.", strconv.Itoa(*updateDelay))
+				glog.Infof("detect Registered Node, update hosts file after %s seconds.", strconv.Itoa(*updateDelay))
 				go func() {
 					time.Sleep(time.Duration(*updateDelay) * time.Second)
 					if e := updateHostsFile(); e != nil {
